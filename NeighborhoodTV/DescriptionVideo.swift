@@ -11,18 +11,18 @@ import AVKit
 
 struct DescriptionVideo: View {
     @Binding var currentVideoPlayURL:String
-    @Binding var isCornerScreenFocused:Bool
-    @State private var player : AVQueuePlayer?
-    @State private var videoLooper: AVPlayerLooper?
+//    @Binding var isCornerScreenFocused:Bool
+//    @State private var player : AVQueuePlayer?
+//    @State private var videoLooper: AVPlayerLooper?
     @State var isFullScreenModeFlag:Bool = false
-    @State var currentthumbnailUrl:String = (UserDefaults.standard.object(forKey: "currentthumbnailUrl") as? String)!
+    @State var currentthumbnailUrl:String = UserDefaults.standard.object(forKey: "currentthumbnailUrl") as? String ?? ""
     @State var isAppear:Bool = false
     
     let publisher = NotificationCenter.default.publisher(for: NSNotification.Name.dataDidFlow)
     let pub_des_player_stop = NotificationCenter.default.publisher(for: NSNotification.Name.pub_des_player_stop)
     
     var body: some View {
-        VideoPlayer(player: player)
+        VideoPlayer(player: PlayerInstance.shared.getPlayer(withURL: currentVideoPlayURL))
                             .overlay(AsyncImage(url: URL(string: currentthumbnailUrl), content: {image in
 //            .overlay(AsyncImage(url: URL(string: "file:///Users/fulldev/Documents/temp/AppleTV-app/NeighborhoodTV/Assets.xcassets/splashscreen.jpg"), content: {image in
                 image.resizable()
@@ -32,12 +32,16 @@ struct DescriptionVideo: View {
             .onAppear() {
                 if !isAppear {
                     isFullScreenModeFlag = false
-                    let templateItem = AVPlayerItem(url: URL(string: currentVideoPlayURL )!)
-                    player = AVQueuePlayer(playerItem: templateItem)
-                    videoLooper = AVPlayerLooper(player: player!, templateItem: templateItem)
-                    videoLooper?.disableLooping()
                     
-                                        player!.play()
+                    PlayerInstance.shared.updatePlaying(withURL: currentVideoPlayURL)
+                    
+                    
+//                    let templateItem = AVPlayerItem(url: URL(string: currentVideoPlayURL )!)
+//                    PlayerInstance.shared.previewPlayer = AVQueuePlayer(playerItem: templateItem)
+//                    PlayerInstance.shared.previewVideoLooper = AVPlayerLooper(player: PlayerInstance.shared.previewPlayer!, templateItem: templateItem)
+//                    PlayerInstance.shared.previewVideoLooper?.disableLooping()
+//
+//                    PlayerInstance.shared.previewPlayer!.play()
                     isAppear = true
                     print("-------->>>>>>Play1", currentVideoPlayURL)
                     
@@ -56,11 +60,14 @@ struct DescriptionVideo: View {
                         print("Invalid URL")
                         return
                     }
-                    let templateItem = AVPlayerItem(url: URL(string: currentVideoPlayURL )!)
-                    player = AVQueuePlayer(playerItem: templateItem)
-                    videoLooper = AVPlayerLooper(player: player!, templateItem: templateItem)
-                    videoLooper?.disableLooping()
-                                        player!.play()
+                    
+                    PlayerInstance.shared.updatePlaying(withURL: currentVideoPlayURL)
+
+//                    let templateItem = AVPlayerItem(url: URL(string: currentVideoPlayURL )!)
+//                    PlayerInstance.shared.previewPlayer = AVQueuePlayer(playerItem: templateItem)
+//                    PlayerInstance.shared.previewVideoLooper = AVPlayerLooper(player: PlayerInstance.shared.previewPlayer!, templateItem: templateItem)
+//                    PlayerInstance.shared.previewVideoLooper?.disableLooping()
+//                    PlayerInstance.shared.previewPlayer!.play()
                     print("-------->>>>>>Play2", currentVideoPlayURL)
                     
                     guard let _currentthumbnailUrl = UserDefaults.standard.object(forKey: "currentthumbnailUrl") as? String else {
@@ -78,8 +85,9 @@ struct DescriptionVideo: View {
                 }
                 if _oPub_des_player_stop {
                     print("-------->>>>>Pause2")
-                    player!.pause()
-                    player!.seek(to: .zero)
+                    PlayerInstance.shared.stopPlayer()
+//                    PlayerInstance.shared.previewPlayer!.pause()
+//                    PlayerInstance.shared.previewPlayer!.seek(to: .zero)
                 }
             }
     }
@@ -96,8 +104,10 @@ struct DescriptionVideo: View {
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: .puh_fullScreen, object: false)
         }
-        player!.pause()
-        player!.seek(to: .zero)
+        PlayerInstance.shared.stopPlayer()
+
+//        PlayerInstance.shared.previewPlayer!.pause()
+//        PlayerInstance.shared.previewPlayer!.seek(to: .zero)
     }
 }
 

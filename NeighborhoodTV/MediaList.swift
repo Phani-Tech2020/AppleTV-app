@@ -199,7 +199,7 @@ struct Grid: View {
             NotificationCenter.default.post(name: .pub_player_stop, object: true)
         }
         do {
-            guard var accessToken = UserDefaults.standard.object(forKey: "accessToken") as? String else {
+            guard let accessToken = UserDefaults.standard.object(forKey: "accessToken") as? String else {
                 print("Invalid accessToken")
                 return
             }
@@ -225,7 +225,7 @@ struct Grid: View {
                 return
             }
             
-            let itemAccessKeyDataModel = AccessKeyData(version_name: "1.0", device_id: "1", device_model: "1", version_code: "1.0", device_type: "Fire TV", access_key: _locationAccessKey)
+            let itemAccessKeyDataModel = AccessKeyData(version_name: versionName, device_id: deviceId, device_model: deviceModel, version_code: versionCode, device_type: deviceType, access_key: _locationAccessKey,zipcode: zip_code)
             let jsonItemAccessKeyData = try? JSONEncoder().encode(itemAccessKeyDataModel)
             
             var descriptionVideoRequest = URLRequest(url: descriptionVideoParseURL)
@@ -248,9 +248,9 @@ struct Grid: View {
                 
                 let _response = response as? HTTPURLResponse
                 if (200 ..< 299) ~= _response!.statusCode {
-                    print("Success: HTTP request ")
+                    //print("Success: HTTP request ")
                 } else {
-                    print("Error: HTTP request failed")
+                    //print("Error: HTTP request failed")
                     if _response?.statusCode == 401 {
                         getRefreshToken()
                         isPresentingAlert = true

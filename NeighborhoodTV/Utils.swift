@@ -6,9 +6,10 @@
 //
 
 import Foundation
+import UIKit
 
-let tokenURL = "https://api.watchntv.tv/v2/user"
-
+let baseURL = "https://apiv2.watchntv.tv/v2"//"https://api.watchntv.tv/v2/user"
+let tokenURL = "https://apiv2.watchntv.tv/v2/user"
 /* Create Model */
 struct DefaultData: Codable {
     let version_name: String
@@ -16,10 +17,26 @@ struct DefaultData: Codable {
     let device_model: String
     let version_code: String
     let device_type: String
+    var zipcode:String
 }
 
-let defaultDataModel = DefaultData(version_name: "3", device_id: "3", device_model: "3", version_code: "3", device_type: "Iphone")
+let defaultDataModel = DefaultData(version_name: versionName, device_id: deviceId, device_model: deviceModel, version_code: versionCode, device_type: deviceType,zipcode:zip_code)
 let jsonDefaultData = try? JSONEncoder().encode(defaultDataModel)
+let versionName = "nbh_iosTV_\(versionStr())"
+let deviceId = UIDevice.current.identifierForVendor!.uuidString
+let deviceModel = UIDevice.modelName
+let versionCode = "1"
+let deviceType = "Apple TV"
+var zip_code = ""
+var spalshActive:Bool = false
+//var accessToken = ""
+//var apiBaseURL = ""
+//var homeSubURI = ""
+//var playURI = ""
+//var accessKey = ""
+//var currentVideoPlayURL = ""
+
+
 /* ------------ */
 struct MediaListType: Codable {
     var itemIndex: Int
@@ -40,6 +57,7 @@ struct AccessKeyData: Codable {
     var version_code: String
     var device_type: String
     var access_key: String
+    var zipcode : String
 }
 /* ------------ */
 
@@ -60,6 +78,9 @@ extension Notification.Name {
     static let puh_fullScreen = Notification.Name("puh_fullScreen")
     static let pub_player_stop = Notification.Name("pub_player_stop")
     static let pub_des_player_stop = Notification.Name("pub_des_player_stop")
+    static let zip_Code_Update = Notification.Name("zip_Code_Update")
+    static let zip_Code_locationDefaultFocus = Notification.Name("zip_Code_locationDefaultFocus")
+    static let zip_Code_Update_Dashboard = Notification.Name("zip_Code_Update_Dashboard")
 }
 
 /* RefreshToken Model */
@@ -111,7 +132,7 @@ func getRefreshToken() {
         
         let _response = response as? HTTPURLResponse
         if (200 ..< 299) ~= _response!.statusCode {
-            print("Success: HTTP request ")
+            //print("Success: HTTP request ")
         } else {
             print("Error: HTTP request failed")
             if _response?.statusCode == 440 {
@@ -166,7 +187,7 @@ func reGetAccessToken() {
             
             let _response = response as? HTTPURLResponse
             if (200 ..< 299) ~= _response!.statusCode {
-                print("Success: HTTP request ")
+              //  print("Success: HTTP request ")
             } else {
                 print("Error: HTTP request failed")
             }
@@ -195,4 +216,13 @@ func reGetAccessToken() {
     }
 }
 
+func versionStr()->String{
+  let appVerString: String = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as? String ?? ""
+  return appVerString
+}
+
+func versionCodeStr()->String{
+  let appBuildString: String = Bundle.main.infoDictionary!["CFBundleVersion"] as? String ?? ""
+  return appBuildString
+}
 

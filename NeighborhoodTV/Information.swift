@@ -170,6 +170,8 @@ struct Information: View {
                 Divider().padding(.leading, 100).focusable(true){ isFo in isDividerText = isFo; onDownScrollText()}
             }
             .onAppear() {
+                PlayerInstance.shared.stopPlayer()
+
                 getCurrentInfo()
             }
             .frame(height: 900)

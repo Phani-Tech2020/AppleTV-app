@@ -3,7 +3,7 @@
 //  NeighborhoodTV
 //
 //  Created by fulldev on 1/20/23.
-//
+// com.NeighborhoodTV.NeighborhoodTVOS
 
 import SwiftUI
 import AVKit
@@ -60,6 +60,7 @@ struct Home: View {
                                 .onAppear() {
                                     DispatchQueue.main.asyncAfter(deadline: .now()) {
                                         self.nameInfocus = true
+                                        self.isCornerScreenFocused = true
                                     }
                                 }
                                 .onReceive(pub_default_focus) { (out_location_default) in

@@ -9,7 +9,7 @@ import SwiftUI
 import AVKit
 
 struct SplashScreen: View {
-    @State private var isLoading = false
+    //@State private var isLoading = false
     
     var body: some View {
         ZStack {

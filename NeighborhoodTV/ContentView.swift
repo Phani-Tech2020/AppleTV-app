@@ -15,8 +15,16 @@ struct ContentView: View {
     @Binding var currentVideoTitle:String
     
     @State var isFullScreenBtnClicked = false
-    @State var isPreviewVideoStatus = false
-    @State var isCornerScreenFocused = true
+    @State var isPreviewVideoStatus = false {
+        didSet {
+            print("Sucharu", isPreviewVideoStatus)
+        }
+    }
+    @State var isCornerScreenFocused = true {
+        didSet {
+            print("Sucharu", isCornerScreenFocused)
+        }
+    }
     @State var isTitleFocused = false
     @State var isVideoSectionFocused = false
     
@@ -42,7 +50,6 @@ struct ContentView: View {
                         isLocationVisible:$isLocationVisible,
                         isCollapseSideBar:$isCollapseSideBar
                     )
-                    .background(Image("bg_full_2"))
                     .onExitCommand() {
                         exit(0)
                     }
@@ -54,6 +61,21 @@ struct ContentView: View {
                     .onExitCommand() {
                         exit(0)
                     }
+                    case 3:
+                        DashBoardAlertView(
+                            sideBarDividerFlag: $sideBarDividerFlag,
+                            isCollapseSideBar: $isCollapseSideBar,
+                            isPreviewVideoStatus: $isPreviewVideoStatus,
+                            isLocationItemFocused:$isLocationItemFocused,
+                            currentVideoPlayURL:$currentVideoPlayURL,
+                            allMediaItems:$allMediaItems,
+                            allLocationItems:$allLocationItems,
+                            currentVideoTitle:$currentVideoTitle
+                         )
+                        .background(Image("bg_full_2"))
+                        .onExitCommand() {
+                            exit(0)
+                        }
                 default:
                     HStack {
                         /* ------------------ MainContent --------------------- */
@@ -76,13 +98,14 @@ struct ContentView: View {
                                         if _oPub_player_stop {
                                             isPreviewVideoStatus = true
                                         }
+                                    }.onDisappear() {
+                                        
                                     }
                                     .onExitCommand() {
                                         exit(0)
                                     }
                                 }
-                            } else
-                            if !self.isCornerScreenFocused {
+                            } else if !self.isCornerScreenFocused {
                                 VStack {
                                     Description(
                                         currentVideoPlayURL:$currentVideoPlayURL,
@@ -102,11 +125,17 @@ struct ContentView: View {
                                 
                                 if isCornerScreenFocused {
                                     Divider()
-                                        .focusable(isPreviewVideoStatus ? isCollapseSideBar ? false : true : false) {newState in isTitleFocused = newState; onUpButtonToHome() }
+                                        .focusable(isPreviewVideoStatus ? isCollapseSideBar ? false : true : false) {
+                                            newState in isTitleFocused = newState; onUpButtonToHome()
+                                            
+                                        }
                                 }
                                 else {
                                     Divider()
-                                        .focusable( !isVideoSectionFocused ? isCollapseSideBar ? false : true : false ) { newState in isTitleFocused = newState ; isVideoSectionFocused = true  }
+                                        .focusable( !isVideoSectionFocused ? isCollapseSideBar ? false : true : false ) {
+                                            newState in isTitleFocused = newState ; isVideoSectionFocused = true
+                                            
+                                        }
                                 }
                                 MediaList(
                                     allMediaItems:$allMediaItems,
@@ -145,7 +174,7 @@ struct ContentView: View {
                     isPreviewVideoStatus:$isPreviewVideoStatus,
                     isLocationItemFocused:$isLocationItemFocused,
                     currentVideoTitle:$currentVideoTitle,
-                    sideBarDividerFlag:$sideBarDividerFlag,
+                    locationAllMediaItems : $allMediaItems, sideBarDividerFlag:$sideBarDividerFlag,
                     isLocationVisible:$isLocationVisible
                 )
                 .frame(height: 1080)
@@ -177,5 +206,31 @@ struct ContentView: View {
             NotificationCenter.default.post(name: .pub_player_stop, object: false)
         }
     }
+    
+    func popupShowZipCodeAlerta(){
+        let alert = UIAlertController(title: "Forgot Password!", message: "Please enter your Email-ID", preferredStyle: .alert)
+        alert.addTextField { (textField) in
+            textField.placeholder = "Email-ID"
+            textField.textAlignment = .center
+        }
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { [weak alert] (_) in
+            let textField = alert?.textFields![0]
+            if textField?.text! != ""{
+//                WebServices.viewcntrl = self
+//                WebServices.ForgotPasswordAPI(email: (textField?.text!)!) { error in
+//                    if error == nil{
+//                        showAlert(title: "Please check your Inbox for the recoverd password", message: "",vc: self)
+//                    }
+//                }
+             }
+        }))
+        //self.present(alert, animated: true, completion: nil)
+        
+        
+        
+        
+    }
+    
+    
 }
 

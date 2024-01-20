@@ -33,6 +33,7 @@ struct Description: View {
                                 VStack(alignment: .leading) {
                                     Text("Streaming Now - \(currentVideoTitle)")
                                         .font(.custom("Arial Round MT Bold", fixedSize: 35))
+                                        
                                     
                                     Text("\(currentVideoDescription)")
                                         .font(.custom("Arial Round MT Bold", fixedSize: 25))
@@ -53,6 +54,9 @@ struct Description: View {
                                         DispatchQueue.main.asyncAfter(deadline: .now() ) {
                                                 self.nameInfocused = true
                                         }
+                                     
+                                        
+
                                     }
                                     .onReceive(pub_default_focus) { (out_location_default) in
                                         guard let _out_location_default = out_location_default.object as? Bool else {
@@ -72,7 +76,7 @@ struct Description: View {
                 }
                 
                 VStack {
-                    DescriptionVideo(currentVideoPlayURL: $currentVideoPlayURL, isCornerScreenFocused:$isCornerScreenFocused)
+                    DescriptionVideo(currentVideoPlayURL: $currentVideoPlayURL)
                         .shadow(color: .black, radius: 10)
                         .frame(width: (isFullScreenBtnClicked ? 1920 : 900), height: (isFullScreenBtnClicked ? 1080 : 505))
                         .focusable(false)
@@ -81,6 +85,7 @@ struct Description: View {
                                 print("Invalid URL")
                                 return
                             }
+                            
                             isFullScreenBtnClicked = _outFull
                         }
                     
@@ -111,10 +116,14 @@ struct Description: View {
         }
         
         DispatchQueue.main.async {
+            self.isCornerScreenFocused = true
+
             NotificationCenter.default.post(name: .previousItemIndex, object: _previousItemIndex)
         }
+        print("S1",self.isCornerScreenFocused)
         
-        isCornerScreenFocused = true
+        isCornerScreenFocused.toggle()
+        self.isCornerScreenFocused = true
         
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: .pub_des_player_stop, object: true)

@@ -1,73 +1,98 @@
 //
-//  NeighborhoodTVApp.swift
+//  DashBoardAlertView.swift
 //  NeighborhoodTV
 //
-//  Created by fulldev on 1/20/23.
+//  Created by Phaneendra on 10/08/2023.
 //
 
 import SwiftUI
-import AVFoundation
+import AVKit
 
-@main
-struct NeighborhoodTVApp: App {
-    @State var isSplashActive:Bool = true
-    @State var allMediaItems:[MediaListType] = []
+struct DashBoardAlertView: View {
+    @State private var isLoading = false
+    @State private var name:String = ""
+    @Binding var sideBarDividerFlag:Bool
+    @Binding var isCollapseSideBar:Bool
+    @FocusState var isEditLocationDefaultFocus:Bool
+    
+//    @State var allMediaItems:[MediaListType] = []
     @State var accessToken:String = ""
     @State var apiBaseURL:String = ""
     @State var homeSubURI:String = ""
     @State var playURI:String = ""
     @State var accessKey:String = ""
-    @State var currentVideoPlayURL:String = ""
-    @State var allLocationItems:[LocationModel] = []
-    @State var currentVideoTitle:String = ""
-    @State var navigated = false
-    var body: some Scene {
-        WindowGroup {
-            if isSplashActive {
-                /* -----------------------SplashScreen------------------------ */
-                let publisher = NotificationCenter.default.publisher(for: NSNotification.Name.zip_Code_Update)
-                let zipCode = UserDefaults.standard.value(forKey: "zip_code")
-                if zipCode != nil{
-                    SplashScreen()
-                        .onAppear(perform: {
-                            zip_code = (UserDefaults.standard.value(forKey: "zip_code") as? String)!
+//   @State var currentVideoPlayURL:String = ""
+  //  @State var allLocationItems:[LocationModel] = []
+//    @State var currentVideoTitle:String = ""
+    @Binding var isPreviewVideoStatus:Bool
+    @FocusState private var isEditLocationFocus:Bool
+
+    @State private var showingAlert = false
+    @Binding var isLocationItemFocused:Int
+    @Binding var currentVideoPlayURL:String
+    @Binding var allMediaItems:[MediaListType]
+    @Binding var allLocationItems:[LocationModel]
+    @Binding var currentVideoTitle:String
+
+    
+    
+    let pub_default_focus = NotificationCenter.default.publisher(for: NSNotification.Name.zip_Code_locationDefaultFocus)
+    
+    
+    var body: some View{
+        ZStack {
+            /*--------------------- splashscreen image----------------------- */
+            Image("splashscreen").resizable().frame(width: 1920, height: 1080, alignment: .center)
+            /*--------------------- Loading... ----------------------- */
+            VStack {
+                Spacer()
+                     .alert("Please Provide ZIP code to get the information related to your Location.", isPresented: $isLoading) {
+                        TextField("ZIP Code", text: $name)
+                            .textContentType(.oneTimeCode)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.center)
+                        Button("Proceed",action: {
+                            zip_code = name
+                            UserDefaults.standard.set(zip_code, forKey: "zip_code")
+                             UserDefaults.standard.synchronize()
+//                            showingAlert = true
                             getToken()
                         })
-                        .frame(width: 300, height: 100,alignment: .center)
-                }else{
-                    AlertView()
-                        .onReceive(publisher) { (output) in
-                            guard let _objURL = output.object as? String else {
-                                print("Invalid URL")
-                                return
-                            }
-                            print(_objURL)
-                            getToken()
+                        
+                    }
+                    .focused($isEditLocationFocus)
+                    .alert("ZIP code Updated Successfully", isPresented: $showingAlert) {
+                        Button("OK", role: .cancel) {
+                            onHomeButton()
                         }
-                    VStack {
-                        Spacer()
-                        Loading()
-                            .padding(.bottom, 200)
                     }
-                    .frame(width: 300, height: 100,alignment: .center)
-                }
-             } else {
-                /* -----------------------MainContent------------------------ */
-                if zip_code != ""{
-                     if zip_code != ""{
-                        ContentView(currentVideoPlayURL: $currentVideoPlayURL, allMediaItems:$allMediaItems, allLocationItems: $allLocationItems, currentVideoTitle: $currentVideoTitle)
-                    }else{
-                        AlertView()
+            message: {
+                        Text(zip_code)
                     }
-                }
+                    .padding(.bottom, 200)
+                    .onReceive(pub_default_focus) { (output) in
+                        guard let _objURL = output.object as? String else {
+                            print("Invalid URL")
+                            return
+                        }
+                         print(_objURL)
+                        self.isEditLocationFocus = true
+                    }
+             }
+            VStack {
+                Spacer()
+                Loading()
+                .padding(.bottom, 200)
             }
-            
+        }.onAppear(){
+            self.isLoading = true
+            PlayerInstance.shared.stopPlayer()
+            DispatchQueue.main.asyncAfter(deadline: .now()) {
+                     self.isEditLocationFocus = true
+             }
         }
         
     }
-    
-    
-    
     
     /* -----------------------GetToken------------------------ */
     func getToken() {
@@ -88,7 +113,11 @@ struct NeighborhoodTVApp: App {
             tokenRequest.httpMethod = "POST"
             tokenRequest.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
             tokenRequest.setValue("application/json", forHTTPHeaderField: "Accept")
-            tokenRequest.httpBody = jsonDefaultData
+            
+            let defaultDataModel = DefaultData(version_name: versionName, device_id: deviceId, device_model: deviceModel, version_code: versionCode, device_type: deviceType,zipcode:zip_code)
+            let jsonAccessKeyData = try? JSONEncoder().encode(defaultDataModel)
+            
+            tokenRequest.httpBody = jsonAccessKeyData
             
             URLSession.shared.dataTask(with: tokenRequest) { data, response, error in
                 guard error == nil else {
@@ -204,8 +233,11 @@ struct NeighborhoodTVApp: App {
             mediaListRequest.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
             mediaListRequest.setValue("application/json", forHTTPHeaderField: "Accept")
             mediaListRequest.setValue( "Bearer \(_accessToken)", forHTTPHeaderField: "Authorization")
-            mediaListRequest.httpBody = jsonDefaultData
+            let defaultDataModel = DefaultData(version_name: versionName, device_id: deviceId, device_model: deviceModel, version_code: versionCode, device_type: deviceType,zipcode:zip_code)
+            let jsonAccessKeyData = try? JSONEncoder().encode(defaultDataModel)
             
+            mediaListRequest.httpBody = jsonAccessKeyData
+ 
             URLSession.shared.dataTask(with: mediaListRequest) { data, response, error in
                 guard error == nil else {
                     //print("Error: error calling POST")
@@ -262,7 +294,7 @@ struct NeighborhoodTVApp: App {
                     UserDefaults.standard.set(jsonMediaListLocation["play_uri"], forKey: "play_uri")
                     UserDefaults.standard.set(jsonMediaListLocation["thumbnailUrl"], forKey: "currentthumbnailUrl")
                     
-                    
+                    allMediaItems.removeAll()
                     for item in jsonMediaListItems {
                         let mediaListItems: MediaListType = MediaListType(itemIndex: allMediaItems.count + 1,
                                                                           _id: item["_id"] as! String,
@@ -374,8 +406,7 @@ struct NeighborhoodTVApp: App {
                     
                     
                                         currentVideoPlayURL = _currentVideoPlayURL
-//                    currentVideoPlayURL = "file:///Users/fulldev/Documents/temp/AppleTV-app/video.mp4"
-                    UserDefaults.standard.set(currentVideoPlayURL, forKey: "original_uri")
+                     UserDefaults.standard.set(currentVideoPlayURL, forKey: "original_uri")
                     DispatchQueue.main.async {
                         NotificationCenter.default.post(name: .dataDidFlow, object: currentVideoPlayURL)
                     }
@@ -408,7 +439,10 @@ struct NeighborhoodTVApp: App {
             infoAboutUsRequest.httpMethod = "POST"
             infoAboutUsRequest.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
             infoAboutUsRequest.setValue("application/json", forHTTPHeaderField: "Accept") // the response expected to be in JSON format
-            infoAboutUsRequest.httpBody = jsonDefaultData
+            let defaultDataModel = DefaultData(version_name: versionName, device_id: deviceId, device_model: deviceModel, version_code: versionCode, device_type: deviceType,zipcode:zip_code)
+            let jsonAccessKeyData = try? JSONEncoder().encode(defaultDataModel)
+            
+             infoAboutUsRequest.httpBody = jsonAccessKeyData
             infoAboutUsRequest.setValue( "Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
             
             URLSession.shared.dataTask(with: infoAboutUsRequest) {data, response, error in
@@ -469,11 +503,16 @@ struct NeighborhoodTVApp: App {
                 return
             }
             
+            let defaultDataModel = DefaultData(version_name: versionName, device_id: deviceId, device_model: deviceModel, version_code: versionCode, device_type: deviceType,zipcode:zip_code)
+            let jsonAccessKeyData = try? JSONEncoder().encode(defaultDataModel)
+            
+ 
+            
             var infoPrivacyPolicyRequest = URLRequest(url: infoPrivacyPolicyParseURL)
             infoPrivacyPolicyRequest.httpMethod = "POST"
             infoPrivacyPolicyRequest.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
             infoPrivacyPolicyRequest.setValue("application/json", forHTTPHeaderField: "Accept")
-            infoPrivacyPolicyRequest.httpBody = jsonDefaultData
+            infoPrivacyPolicyRequest.httpBody = jsonAccessKeyData
             infoPrivacyPolicyRequest.setValue( "Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
             
             URLSession.shared.dataTask(with: infoPrivacyPolicyRequest) {data, response, error in
@@ -533,12 +572,15 @@ struct NeighborhoodTVApp: App {
                 //print("Invalid URL...")
                 return
             }
+            let defaultDataModel = DefaultData(version_name: versionName, device_id: deviceId, device_model: deviceModel, version_code: versionCode, device_type: deviceType,zipcode:zip_code)
+            let jsonAccessKeyData = try? JSONEncoder().encode(defaultDataModel)
             
+ 
             var infoVisitorAgreementRequest = URLRequest(url: infoVisitorAgreementParseURL)
             infoVisitorAgreementRequest.httpMethod = "POST"
             infoVisitorAgreementRequest.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
             infoVisitorAgreementRequest.setValue("application/json", forHTTPHeaderField: "Accept")
-            infoVisitorAgreementRequest.httpBody = jsonDefaultData
+            infoVisitorAgreementRequest.httpBody = jsonAccessKeyData
             infoVisitorAgreementRequest.setValue( "Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
             
             URLSession.shared.dataTask(with: infoVisitorAgreementRequest) {data, response, error in
@@ -573,7 +615,12 @@ struct NeighborhoodTVApp: App {
                     
                     UserDefaults.standard.set(jsonInfoVisitorAgreementResults["page_body"], forKey: "visitor_agreement_page_body")
                     UserDefaults.standard.set(jsonInfoVisitorAgreementResults["seo_title"], forKey: "visitor_agreement_seo_title")
-                    isSplashActive = false
+                  
+                    self.onHomeButton()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                      //  self.onHomeButton()
+                     }
+                    
                 } catch {
                     //print("Error: Trying to convert JSON data to string", error)
                     return
@@ -585,6 +632,45 @@ struct NeighborhoodTVApp: App {
         }
     }
    
- 
+    func onHomeButton() {
+//        guard let _currentVideoTitle = UserDefaults.standard.object(forKey: "original_title") as? String else {
+//            print("Invalid Title")
+//            return
+//        }
+//
+//        print(currentVideoPlayURL)
+//        print(currentVideoTitle)
+//        isPreviewVideoStatus = true
+//        isCollapseSideBar = true
+//
+//
+//
+//
+//        DispatchQueue.main.async {
+//           NotificationCenter.default.post(name: .pub_player_stop, object: true)
+//        }
+        
+        guard let _currentVideoTitle = UserDefaults.standard.object(forKey: "original_title") as? String else {
+            print("Invalid Title")
+            return
+        }
+        
+        isLocationItemFocused = 0
+        currentVideoTitle = _currentVideoTitle
+        allMediaItems = allMediaItems
+         isPreviewVideoStatus = false
+        isCollapseSideBar = false
+        
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .pub_player_stop, object: false)
+        }
+        
+        
+        
+    }
+    
+    
+    
     
 }
+ 

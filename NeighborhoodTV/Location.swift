@@ -72,6 +72,8 @@ struct GridLocationItem: View {
         .focused($isLocationDefaultFocus)
         .onAppear() {
             sideBarDividerFlag = false
+            PlayerInstance.shared.stopPlayer()
+
             DispatchQueue.main.asyncAfter(deadline: .now()) {
                 if locationItem.locationItemIndex == 1 {
                     self.isLocationDefaultFocus = true
@@ -207,10 +209,8 @@ struct GridLocationItem: View {
                                                                           access_key: item["access_key"] as! String
                         )
                         locationAllMediaItems.append(mediaListItems)
-                        locationPreviewVideo()
-                        
                     }
-                    
+                    locationPreviewVideo()
                     
                 } catch {
                     print("Error: Trying to convert JSON data to string", error)
@@ -244,7 +244,7 @@ struct GridLocationItem: View {
                 return
             }
             
-            let accessKeyDataModel = AccessKeyData(version_name: "1.0", device_id: "1", device_model: "1", version_code: "1.0", device_type: "Fire TV", access_key: locationAccessKey)
+            let accessKeyDataModel = AccessKeyData(version_name: versionName, device_id: deviceId, device_model: deviceModel, version_code: versionCode, device_type: deviceType, access_key: locationAccessKey,zipcode: zip_code)
             let jsonAccessKeyData = try? JSONEncoder().encode(accessKeyDataModel)
             
             var locationPreviewVideoRequest = URLRequest(url: locationPreviewVideoParseURL)
@@ -267,9 +267,9 @@ struct GridLocationItem: View {
                 
                 let _response = response as? HTTPURLResponse
                 if (200 ..< 299) ~= _response!.statusCode {
-                    print("Success: HTTP request ")
+                    //print("Success: HTTP request ")
                 } else {
-                    print("Error: HTTP request failed")
+                    //print("Error: HTTP request failed")
                     getRefreshToken()
                 }
                 do {
@@ -288,6 +288,7 @@ struct GridLocationItem: View {
                         return
                     }
                     
+                    UserDefaults.standard.set(1, forKey: "current_is_live")
                     UserDefaults.standard.set(jsonLocationPreviewVideoResults["is_live"], forKey: "origin_is_live")
                     UserDefaults.standard.set(jsonLocationPreviewVideoResults["manage_trp"], forKey: "origin_manage_trp")
                     
@@ -301,10 +302,12 @@ struct GridLocationItem: View {
                     UserDefaults.standard.set(jsonLocationPreviewVideoTRP["access_key"], forKey: "origin_trp_access_key")
                     
                     UserDefaults.standard.set(locationItem.thumbnailUrl, forKey: "currentthumbnailUrl")
-                    
+
                                         locationCurrentVideoPlayURL = _currentVideoPlayURL
 //                    locationCurrentVideoPlayURL = "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"
+                    
                     UserDefaults.standard.set(locationCurrentVideoPlayURL, forKey: "original_uri")
+                //    UserDefaults.standard.set(locationCurrentVideoPlayURL, forKey: "original_uri_update")
                     DispatchQueue.main.async {
                         NotificationCenter.default.post(name: .dataDidFlow, object: locationCurrentVideoPlayURL)
                     }
@@ -407,7 +410,10 @@ struct Location: View {
                                     isLocationPreviewVideoStatus = true
                                 }
                             }
-                            .onExitCommand(perform: {isLocationVisible = true})
+                            .onExitCommand(perform: {
+                                isLocationVisible = true
+                                
+                            })
                         }
                     } else {
                         if !isLocationCornerScreenFocused {
@@ -477,6 +483,12 @@ struct Location: View {
             return
         }
         
+//        guard let _originalVideoPlayURL = UserDefaults.standard.object(forKey: "original_uri_update") as? String else {
+//            print("Invalid URL")
+//            return
+//        }
+ 
+        
         guard let _originalVideoTitle = UserDefaults.standard.object(forKey: "original_title") as? String else {
             print("Invalid Title")
             return
@@ -487,6 +499,7 @@ struct Location: View {
         }
         
         locationCurrentVideoTitle = _originalVideoTitle
+        locationAllMediaItems = locationAllMediaItems
         locationCurrentVideoPlayURL = _originalVideoPlayURL
         isLocationPreviewVideoStatus = false
     }
